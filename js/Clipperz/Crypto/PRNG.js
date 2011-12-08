@@ -195,17 +195,17 @@ Clipperz.Crypto.PRNG.TimeRandomnessSource.prototype = MochiKit.Base.update(new C
 	},
 	
 	//-------------------------------------------------------------------------
-
+/*
 	'numberOfRandomBits': function() {
 		return 5;
 	},
-	
+*/	
 	//-------------------------------------------------------------------------
-
+/*
 	'pollingFrequency': function() {
 		return 10;
 	},
-
+*/
 	//-------------------------------------------------------------------------
 	__syntaxFix__: "syntax fix"
 });
@@ -287,17 +287,17 @@ Clipperz.Crypto.PRNG.MouseRandomnessSource.prototype = MochiKit.Base.update(new 
 	},
 	
 	//-------------------------------------------------------------------------
-
+/*
 	'numberOfRandomBits': function() {
 		return 1;
 	},
-	
+*/	
 	//-------------------------------------------------------------------------
-
+/*
 	'pollingFrequency': function() {
 		return 10;
 	},
-
+*/
 	//-------------------------------------------------------------------------
 	__syntaxFix__: "syntax fix"
 });
@@ -320,68 +320,15 @@ Clipperz.Crypto.PRNG.KeyboardRandomnessSource.prototype = MochiKit.Base.update(n
 
 	//-------------------------------------------------------------------------
 
-	'randomBitsCollector': function() {
-		return this._randomBitsCollector;
-	},
-
-	'setRandomBitsCollector': function(aValue) {
-		this._randomBitsCollector = aValue;
-	},
-
-	'appendRandomBitToRandomBitsCollector': function(aValue) {
-		var collectedBits;
-		var numberOfRandomBitsCollected;
-		
-		numberOfRandomBitsCollected = this.numberOfRandomBitsCollected();
-		collectetBits = this.randomBitsCollector() | (aValue << numberOfRandomBitsCollected);
-		this.setRandomBitsCollector(collectetBits);
-		numberOfRandomBitsCollected ++;
-		
-		if (numberOfRandomBitsCollected == 8) {
-			this.updateGeneratorWithValue(collectetBits);
-			numberOfRandomBitsCollected = 0;
-			this.setRandomBitsCollector(0);
-		}
-		
-		this.setNumberOfRandomBitsCollected(numberOfRandomBitsCollected)
-	},
-	
-	//-------------------------------------------------------------------------
-
-	'numberOfRandomBitsCollected': function() {
-		return this._numberOfRandomBitsCollected;
-	},
-
-	'setNumberOfRandomBitsCollected': function(aValue) {
-		this._numberOfRandomBitsCollected = aValue;
-	},
-
-	//-------------------------------------------------------------------------
-
 	'collectEntropy': function(anEvent) {
-/*
-		var mouseLocation;
-		var randomBit;
+		var	now;
+		var	entropyByte;
+		now = new Date();
+		entropyByte = (now.getTime() & 0xff);
 		
-		mouseLocation = anEvent.mouse().client;
-			
-		randomBit = ((mouseLocation.x ^ mouseLocation.y) & 0x1);
-		this.appendRandomBitToRandomBitsCollector(randomBit);
-*/
+		this.updateGeneratorWithValue(entropyByte);
 	},
 	
-	//-------------------------------------------------------------------------
-
-	'numberOfRandomBits': function() {
-		return 1;
-	},
-	
-	//-------------------------------------------------------------------------
-
-	'pollingFrequency': function() {
-		return 10;
-	},
-
 	//-------------------------------------------------------------------------
 	__syntaxFix__: "syntax fix"
 });
