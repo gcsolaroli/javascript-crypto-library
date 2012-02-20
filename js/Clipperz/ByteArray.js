@@ -1,6 +1,6 @@
 /*
 
-Copyright 2008-2011 Clipperz Srl
+Copyright 2008-2012 Clipperz Srl
 
 This file is part of Clipperz's Javascript Crypto Library.
 
@@ -131,7 +131,6 @@ Clipperz.ByteArray_abstract.prototype = MochiKit.Base.update(null, {
 				var ii, cc;
 				var padding;
 				
-//				padding = new Clipperz.ByteArray();
 				padding = this.newInstance();
 				cc = aLength - bLength;
 				for (ii=0; ii<cc; ii++) {
@@ -139,9 +138,9 @@ Clipperz.ByteArray_abstract.prototype = MochiKit.Base.update(null, {
 				}
 				
 				if (anAllignment == 'left') {
-					b = b.appendBlock(padding);
+					b = b.appendByteArray(padding);
 				} else {
-					b = padding.appendBlock(b);
+					b = padding.appendByteArray(b);
 				}
 			}
 		}
@@ -170,6 +169,12 @@ Clipperz.ByteArray_abstract.prototype = MochiKit.Base.update(null, {
 	//-------------------------------------------------------------------------
 
 	'appendBlock': function(aBlock) {
+		//	DEPRECATED
+Clipperz.log("DEPRECATED: ByteArray.appendBlock");
+		return this.appendByteArray(aBlock);
+	},
+
+	'appendByteArray': function(anArray) {
 		throw Clipperz.Base.exception.AbstractMethod;
 	},
 
@@ -184,6 +189,8 @@ Clipperz.ByteArray_abstract.prototype = MochiKit.Base.update(null, {
 		var	i,c;
 
 		if (args.constructor == Array) {
+			values = args;
+		} else if (args.toString() == "[object Uint8Array]") {
 			values = args;
 		} else {
 			values = arguments;
@@ -420,11 +427,6 @@ Clipperz.ByteArray_abstract.prototype = MochiKit.Base.update(null, {
 			value2 = this.base64map.indexOf(aValue.charAt(i+1));
 			value3 = this.base64map.indexOf(aValue.charAt(i+2));
 			value4 = this.base64map.indexOf(aValue.charAt(i+3));
-
-//			value1 = this.base64mapInvertedIndex[aValue.charAt(i)];
-//			value2 = this.base64mapInvertedIndex[aValue.charAt(i+1)];
-//			value3 = this.base64mapInvertedIndex[aValue.charAt(i+2)];
-//			value4 = this.base64mapInvertedIndex[aValue.charAt(i+3)];
 
 			byte1 = (value1 << 2) | ((value2 & 0x30) >> 4);
 			if (value3 != -1) {
@@ -791,7 +793,7 @@ Clipperz.ByteArray_hex.prototype = MochiKit.Base.update(new Clipperz.ByteArray_a
 	
 	//-------------------------------------------------------------------------
 
-	'appendBlock': function(aBlock) {
+	'appendByteArray': function(aBlock) {
 		this._value = this._value += aBlock.toHexString().substring(2);
 
 		return this;
@@ -1006,7 +1008,7 @@ Clipperz.ByteArray_array.prototype = MochiKit.Base.update(new Clipperz.ByteArray
 	
 	//-------------------------------------------------------------------------
 
-	'appendBlock': function(aBlock) {
+	'appendByteArray': function(aBlock) {
 		MochiKit.Base.extend(this._value, aBlock._value);
 		
 		return this;
@@ -1089,6 +1091,332 @@ Clipperz.ByteArray_array.prototype = MochiKit.Base.update(new Clipperz.ByteArray
 });
 
 
+//=============================================================================
+//
+//	Clipperz.ByteArray_typedArray
+//
+//=============================================================================
+
+Clipperz.ByteArray_typedArray = function (args) {
+	this._usedBytes = 0;
+	
+	if (typeof(args) != 'undefined') {
+		if (args.constructor == Array) {
+			var i, c;
+			c = args.length;
+			result_value = this._allocateBuffer(c);
+			
+			for (i=0; i<c; i++) {
+				this.appendByte(args[i]);
+			}
+
+		} else if (args.constructor == String) {
+//			var result_value;
+			var	value;
+			var i, c;
+			
+			if (args.indexOf("0x") == 0) {
+//console.log("~~~>>> HEX String", args);
+				value = args.substring(2).toLowerCase();
+				if (/[0123456789abcdef]*/.test(value)) {
+					if ((value.length % 2) != 0) {
+						value = "0" + value;
+					}
+				} else {
+MochiKit.Logging.logError("Clipperz.ByteArray should be inizialized with an hex string.");
+					throw Clipperz.ByteArray.exception.InvalidValue;
+				}
+
+				c = value.length / 2
+//				result_value = this._allocateBuffer(c);
+				this._allocateBuffer(c);
+				
+				for (i=0; i<c; i++) {
+//					result_value[i] = parseInt(value.substr(i*2, 2), 16);
+					this.appendByte(parseInt(value.substr(i*2, 2), 16))
+				}
+
+			} else {
+				var unicode;
+				var byteLength;
+//				var bufferIndex;
+				
+				c = args.length;
+				byteLength = 0;
+				for (i=0; i<c; i++) {
+					unicode = args.charCodeAt(i);
+					if (unicode <= 0x7f) {										//	0x00000000 - 0x0000007f -> 0xxxxxxx
+						byteLength += 1;
+					} else if (unicode <= 0x7ff) {		//	0x00000080 - 0x000007ff -> 110xxxxx 10xxxxxx
+						byteLength += 2;
+					} else if (unicode <= 0xffff) {	//	0x00000800 - 0x0000ffff -> 1110xxxx 10xxxxxx 10xxxxxx
+						byteLength += 3;
+					} else {													//	0x00010000 - 0x001fffff -> 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+						byteLength += 4;
+					}
+				}
+		
+//				result_value = this._allocateBuffer(byteLength);
+//				bufferIndex = 0;
+				this._allocateBuffer(byteLength);
+				for (i=0; i<c; i++) {
+					unicode = args.charCodeAt(i);
+					if (unicode <= 0x7f) {										//	0x00000000 - 0x0000007f -> 0xxxxxxx
+//						result_value[bufferIndex] = unicode; bufferIndex += 1;
+						this.appendByte(unicode);
+					} else if (unicode <= 0x7ff) {		//	0x00000080 - 0x000007ff -> 110xxxxx 10xxxxxx
+//						result_value[bufferIndex] = ((unicode >> 6) | 0xc0); bufferIndex += 1;
+//						result_value[bufferIndex] = ((unicode & 0x3F) | 0x80); bufferIndex += 1;
+						this.appendByte((unicode >> 6) | 0xc0);
+						this.appendByte((unicode & 0x3F) | 0x80);
+					} else if (unicode <= 0xffff) {	//	0x00000800 - 0x0000ffff -> 1110xxxx 10xxxxxx 10xxxxxx
+//						result_value[bufferIndex] = ((unicode >> 12) | 0xe0); bufferIndex += 1;
+//						result_value[bufferIndex] = (((unicode >> 6) & 0x3f) | 0x80); bufferIndex += 1;
+//						result_value[bufferIndex] = ((unicode & 0x3f) | 0x80); bufferIndex += 1;
+						this.appendByte(((unicode >> 12) | 0xe0));
+						this.appendByte(((unicode >> 6) & 0x3f) | 0x80);
+						this.appendByte((unicode & 0x3f) | 0x80);
+					} else {													//	0x00010000 - 0x001fffff -> 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+//						result_value[bufferIndex] = ((unicode >> 18) | 0xf0); bufferIndex += 1;
+//						result_value[bufferIndex] = (((unicode >> 12) & 0x3f) | 0x80); bufferIndex += 1;
+//						result_value[bufferIndex] = (((unicode >> 6) & 0x3f) | 0x80); bufferIndex += 1;
+//						result_value[bufferIndex] = ((unicode & 0x3f) | 0x80); bufferIndex += 1;
+						this.appendByte((unicode >> 18) | 0xf0);
+						this.appendByte(((unicode >> 12) & 0x3f) | 0x80);
+						this.appendByte(((unicode >> 6) & 0x3f) | 0x80);
+						this.appendByte((unicode & 0x3f) | 0x80);
+					}
+				}
+//				this._usedBytes = bufferIndex;
+			}
+			
+//			this._value = result_value;
+		} else if ((args.constructor == Object) && (args.length == 0)) {
+			this._allocateBuffer(0)
+		} else if ((args.constructor == Object) && (args[0].toString() == 'Clipperz.ByteArray_typedArray')) {
+			var byteArray;
+			
+			byteArray = args[0];
+//			this._buffer = byteArray._buffer.slice(0);
+//			this._value = new Uint8Array(this._buffer);
+			this._value = new Uint8Array(byteArray._value);	//	NEW
+			this._usedBytes = byteArray._usedBytes;
+
+		} else if ((args.constructor == Object) && (args[0].toString() == '[object ArrayBuffer]')) {
+//			this._buffer = args[0];
+//			this._value = new Uint8Array(this._buffer);
+//			this._usedBytes = this._buffer.byteLength;
+			this._value = new Uint8Array(args[0]);	//	NEW
+			this._usedBytes = this._value.length;	//	NEW
+		} else if ((args.constructor == Object) && (args[0].toString() == '[object Uint8Array]')) {
+		} else if (args.toString() == '[object Uint8Array]') {
+//console.log("~~~>>> Uint8Array");
+//			this._buffer = args.buffer;
+//			this._value = args;
+//			this._usedBytes = this._buffer.byteLength;
+			this._value = new Uint8Array(args);	//	NEW
+			this._usedBytes = args.length;		//	NEW
+		} else if (args.toString() == '[object ArrayBuffer]') {
+//console.log("~~~>>> ArrayBuffer");
+		} else {
+			var bytes;
+			
+			bytes = MochiKit.Base.extend(null, arguments);
+			this._allocateBuffer(bytes.length)
+			this.appendBytes(bytes);
+		}
+	} else {
+		this._allocateBuffer(0)
+	}
+	
+	return this;
+}
+
+Clipperz.ByteArray_typedArray.prototype = MochiKit.Base.update(new Clipperz.ByteArray_abstract(), {
+
+	//-------------------------------------------------------------------------
+
+	'_allocateBuffer': function (byteLength) {
+		this._usedBytes = 0;
+
+//		this._buffer = new ArrayBuffer(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(byteLength));
+//		this._value = new Uint8Array(this._buffer);
+		this._value = new Uint8Array(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(byteLength));
+		
+		return this._value;
+	},
+
+	//.........................................................................
+	
+	'_extendAllocatedBuffer': function (aValue) {
+//		var newBuffer;
+		var newValue;
+		var extension;
+		var i, c;
+		
+		extension = aValue;
+		if (extension == null) {
+			extension = 1;
+		}
+
+//		newBuffer = new ArrayBuffer(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(this._buffer.byteLength + extension));
+//		newValue = new Uint8Array(newBuffer);
+		newValue = new Uint8Array(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(this._value.length + extension));	//	NEW
+		
+		c = this._usedBytes;
+		for (i=0; i<c; i++) {
+			newValue[i] = this._value[i];
+		}
+		
+//		this._buffer = newBuffer;	//	NEW
+		this._value = newValue;
+	},
+	
+	//=========================================================================
+
+	'toString': function () {
+		return "Clipperz.ByteArray_typedArray";
+	},
+	
+	//-------------------------------------------------------------------------
+
+	'clone': function() {
+		return this.newInstance(this);
+	},
+	
+	//-------------------------------------------------------------------------
+
+	'newInstance': function() {
+		return new Clipperz.ByteArray_typedArray(arguments);
+	},
+	
+	//-------------------------------------------------------------------------
+
+	'reset': function() {
+		this._allocateBuffer(0);
+	},
+	
+	//-------------------------------------------------------------------------
+	
+	'length': function() {
+		return (this._usedBytes);
+	},
+	
+	//-------------------------------------------------------------------------
+
+	'appendByteArray': function(anArray) {
+		var i, c;
+		
+		c = anArray.length();
+		this._extendAllocatedBuffer(c);
+		for (i=0; i<c; i++) {
+			this.appendByte(anArray._value[i]);
+		}
+		
+		return this;
+	},
+
+	//-------------------------------------------------------------------------
+
+	'appendByte': function(aValue) {
+//console.log(">>> ByteArray.appendByte", aValue);
+		if (aValue != null) {
+			this.checkByteValue(aValue);
+		
+//			if (this._usedBytes == this._buffer.byteLength) {
+			if (this._usedBytes == this._value.length) {	//	NEW
+				this._extendAllocatedBuffer();
+			}
+
+			this._value[this._usedBytes] = aValue;
+			this._usedBytes ++;
+		}
+		
+		return this;
+	},
+
+	//-------------------------------------------------------------------------
+
+	'byteAtIndex': function(anIndex) {
+		return this._value[anIndex];
+	},
+	
+	'setByteAtIndex': function(aValue, anIndex) {
+		var	missingBytes;
+		
+		this.checkByteValue(aValue);
+	
+		missingBytes = anIndex - this.length();
+		
+		if (missingBytes < 0) {
+			this._value[anIndex] = aValue;
+		} else if (missingBytes == 0) {
+			this.appendByte(aValue);
+		} else {
+			var i,c;
+			
+			c = missingBytes;
+			this._extendAllocatedBuffer(c);
+			for (i=0; i<c; i++) {
+				this.appendByte(0);
+			}
+			
+			this.appendByte(aValue);
+		}
+	},
+
+	//-------------------------------------------------------------------------
+
+	'toHexString': function() {
+		var result;
+		var i, c;
+		
+		result = "0x";
+		c = this.length();
+		for (i=0; i<c; i++) {
+			result += Clipperz.ByteArray.byteToHex(this._value[i]);
+		}
+		
+		return result;
+	},
+	
+	//-------------------------------------------------------------------------
+
+	'split': function(aStartingIndex, anEndingIndex) {
+		var splittedBuffer;
+		
+//		splittedBuffer = this._buffer.slice(aStartingIndex, anEndingIndex ? anEndingIndex : this.length());
+		splittedBuffer = this._value.buffer.slice(aStartingIndex, anEndingIndex ? anEndingIndex : this.length());	//	NEW
+		return this.newInstance(splittedBuffer);
+	},
+
+	//-------------------------------------------------------------------------
+
+	'arrayValues': function () {
+		var	buffer;
+		var result;
+		
+//		buffer = this._buffer.slice(0, this._usedBytes);
+		buffer = this._value.buffer.slice(0, this._usedBytes);	//	NEW
+		result = new Uint8Array(buffer);
+		return result;
+	},
+	
+	//-------------------------------------------------------------------------
+	__syntaxFix__: "syntax fix"
+});
+
+Clipperz.ByteArray_typedArray.allocationBlockSize = 256;
+Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount = function (aByteCount) {
+	var bytes;
+	
+	bytes = aByteCount;
+	if (bytes == 0) {
+		bytes = 1;
+	}
+	
+	return Math.ceil(bytes / Clipperz.ByteArray_typedArray.allocationBlockSize) * Clipperz.ByteArray_typedArray.allocationBlockSize;
+}
 
 
 
@@ -1179,7 +1507,7 @@ Clipperz.ByteArray_string.prototype = MochiKit.Base.update(new Clipperz.ByteArra
 	
 	//-------------------------------------------------------------------------
 
-	'appendBlock': function(aBlock) {
+	'appendByteArray': function(aBlock) {
 		this._value += aBlock._value;
 		
 		return this;
@@ -1277,9 +1605,10 @@ Clipperz.ByteArray_string.prototype = MochiKit.Base.update(new Clipperz.ByteArra
 //
 //=============================================================================
 
-Clipperz.ByteArray = Clipperz.ByteArray_array;
+//Clipperz.ByteArray = Clipperz.ByteArray_array;
 //Clipperz.ByteArray = Clipperz.ByteArray_string;
 //Clipperz.ByteArray = Clipperz.ByteArray_hex;
+Clipperz.ByteArray = Clipperz.ByteArray_typedArray;
 
 //#############################################################################
 

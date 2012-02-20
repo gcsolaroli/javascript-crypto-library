@@ -1,6 +1,6 @@
 /*
 
-Copyright 2008-2011 Clipperz Srl
+Copyright 2008-2012 Clipperz Srl
 
 This file is part of Clipperz's Javascript Crypto Library.
 
@@ -25,17 +25,17 @@ refer to http://www.clipperz.com
 
 */
 
-Clipperz.Crypto.PRNG.defaultRandomGenerator().fastEntropyAccumulationForTestingPurpose();
+//Clipperz.Crypto.PRNG.defaultRandomGenerator().fastEntropyAccumulationForTestingPurpose();
 
 var tests = {
 
     //-------------------------------------------------------------------------
 
 	'core_tests': function (someTestArgs) {
-//		var	deferredResult;
+		var	deferredResult;
 
-//		deferredResult = new Clipperz.Async.Deferred("core_tests", someTestArgs);
-//		deferredResult.addCallback(function() {
+		deferredResult = new Clipperz.Async.Deferred("core_tests", someTestArgs);
+		deferredResult.addCallback(function() {
 			var byteArray;
 
 			byteArray = new Clipperz.ByteArray();
@@ -44,32 +44,47 @@ var tests = {
 				byteArray.checkByteValue(512);
 				is(false, true, "a value greater that a byte (0x200) should have raised an exception - NO Exception");
 			} catch(e) {
-//				is(	e.name,
-//					"Clipperz.ByteArray.exception.InvalidValue",
-//					"appending a value greater that a byte (0x200) should have raised an exception - EXCEPTION HANDLER")
 				ok(	/Clipperz\.ByteArray\.exception\.InvalidValue.*/.test(e.name),
 					"appending a value greater that a byte (0x200) should have raised an exception - EXCEPTION HANDLER")
 			};
-
-//		});
-//		deferredResult.callback();
+		});
+		deferredResult.callback();
 		
-//		return deferredResult;
-		
+		return deferredResult;
 	},
-	
+
+    //-------------------------------------------------------------------------
+
+	'typedArray_core_tests': function (someTestArgs) {
+		var	deferredResult;
+
+		deferredResult = new Clipperz.Async.Deferred("typedArray_core_tests", someTestArgs);
+		deferredResult.addCallback(function() {
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(0), 256, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(100), 256, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(256), 256, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(257), 256 * 2, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(500), 256 * 2, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(512), 256 * 2, "Allocated bytes for given size");
+			is(Clipperz.ByteArray_typedArray.bytesToAllocateForByteCount(513), 256 * 3, "Allocated bytes for given size");
+		});
+		deferredResult.callback();
+		
+		return deferredResult;
+	},
+
     //-------------------------------------------------------------------------
 
 	'basic_tests': function (someTestArgs) {
 		var	deferredResult;
 
-		deferredResult = new Clipperz.Async.Deferred("simple_tests", someTestArgs);
+		deferredResult = new Clipperz.Async.Deferred("basic_tests", someTestArgs);
 		deferredResult.addCallback(function() {
 			var byteArray;
 			var byteArray2;
 			var	byteArrayIterator;
 			var	nextBlock;
-	
+
 			byteArray = new Clipperz.ByteArray();
 			is(byteArray.length(), 0, "before adding any element the length is 0");
 			byteArray.appendByte(10);
@@ -169,9 +184,6 @@ var tests = {
 				byteArray.appendByte(512);
 				is(false, true, "appending a value greater that a byte (0x200) should have raised an exception - NO Exception");
 			} catch(e) {
-//				is(	e.name,
-//					"Clipperz.ByteArray.exception.InvalidValue",
-//					"appending a value greater that a byte (0x200) should have raised an exception - EXCEPTION HANDLER")
 				ok(	/Clipperz\.ByteArray\.exception\.InvalidValue.*/.test(e.name),
 					"appending a value greater that a byte (0x200) should have raised an exception - EXCEPTION HANDLER")
 			};
@@ -180,9 +192,6 @@ var tests = {
 				byteArray.appendByte(256);
 				is(false, true, "appending a value greater that a byte (0x100) should have raised an exception - NO Exception");
 			} catch(e) {
-//				is(	e.name,
-//					"Clipperz.ByteArray.exception.InvalidValue",
-//					"appending a value greater that a byte (0x100) should have raised an exception - EXCEPTION HANDLER")
 				ok(	/Clipperz\.ByteArray\.exception\.InvalidValue.*/.test(e.name),
 					"appending a value greater that a byte (0x100) should have raised an exception - EXCEPTION HANDLER")
 			};
@@ -353,17 +362,17 @@ var tests = {
 
     //-------------------------------------------------------------------------
 
-	'appendBlock_tests': function (someTestArgs) {
+	'appendByteArray_tests': function (someTestArgs) {
 		var	deferredResult;
 
-		deferredResult = new Clipperz.Async.Deferred("appendBlock_tests", someTestArgs);
+		deferredResult = new Clipperz.Async.Deferred("appendByteArray_tests", someTestArgs);
 		deferredResult.addCallback(function() {
 			var byteArray;
 			var byteArray2;
 			
 			byteArray = new Clipperz.ByteArray("0xa1b2c3d4");
 			byteArray2 = new Clipperz.ByteArray("0x1a2b3c4d");
-			is(byteArray.appendBlock(byteArray2).toHexString(), "0xa1b2c3d41a2b3c4d", "the appendBlock method works fine");
+			is(byteArray.appendByteArray(byteArray2).toHexString(), "0xa1b2c3d41a2b3c4d", "the appendByteArray method works fine");
 		});
 		deferredResult.callback();
 		
@@ -472,16 +481,15 @@ var tests = {
 			is(new Clipperz.ByteArray("0xe4b899").asString().charCodeAt(0), 19993, "String decoding - Three bytes char: CJK  ideograph - 丙");
 			is(new Clipperz.ByteArray("0xefbfbf").asString().charCodeAt(0), 65535, "String decoding - Three bytes character - top");
 
-/*
-			is(new Clipperz.ByteArray("0xf0908080").asString().charCodeAt(0), 65536, "String decoding - Four bytes character - bottom");
-			is(new Clipperz.ByteArray("0xf0a08294").asString().charCodeAt(0), 131220, "String decoding - Four bytes char: CJK extended ideograph - ");
-			is(new Clipperz.ByteArray("0xf3b48980").asString().charCodeAt(0), 1000000, "String decoding - Four bytes character - middle");
-			is(new Clipperz.ByteArray("0xf7bfbfbf").asString().charCodeAt(0), 2097151, "String decoding - Four bytes character - top");
-
-			is(String.fromCharCode(65535).charCodeAt(0), 65535, "test fromCharCode - charCodeAt (65535)");
-			is(String.fromCharCode(65536).charCodeAt(0), 65536, "test fromCharCode - charCodeAt (65536)");
-			is(String.fromCharCode(1000000).charCodeAt(0), 1000000, "test fromCharCode - charCodeAt (1000000)");
-*/	
+//			is(new Clipperz.ByteArray("0xf0908080").asString().charCodeAt(0), 65536, "String decoding - Four bytes character - bottom");
+//			is(new Clipperz.ByteArray("0xf0a08294").asString().charCodeAt(0), 131220, "String decoding - Four bytes char: CJK extended ideograph - ");
+//			is(new Clipperz.ByteArray("0xf3b48980").asString().charCodeAt(0), 1000000, "String decoding - Four bytes character - middle");
+//			is(new Clipperz.ByteArray("0xf7bfbfbf").asString().charCodeAt(0), 2097151, "String decoding - Four bytes character - top");
+//
+//			is(String.fromCharCode(65535).charCodeAt(0), 65535, "test fromCharCode - charCodeAt (65535)");
+//			is(String.fromCharCode(65536).charCodeAt(0), 65536, "test fromCharCode - charCodeAt (65536)");
+//			is(String.fromCharCode(1000000).charCodeAt(0), 1000000, "test fromCharCode - charCodeAt (1000000)");
+	
 			//----------------------------------------------------------
 
 			byteArray = new Clipperz.ByteArray("ABCD");

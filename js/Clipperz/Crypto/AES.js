@@ -1,6 +1,6 @@
 /*
 
-Copyright 2008-2011 Clipperz Srl
+Copyright 2008-2012 Clipperz Srl
 
 This file is part of Clipperz's Javascript Crypto Library.
 
@@ -681,6 +681,7 @@ MochiKit.Base.update(Clipperz.Crypto.AES, {
 		encryptedData = Clipperz.Crypto.AES.encryptBlocks(key, someData.arrayValues(), nonce.arrayValues());
 
 		result = nonce.appendBytes(encryptedData);
+//		result = nonce.appendByteArray(encryptedData);
 		
 		return result;
 	},
@@ -697,9 +698,13 @@ MochiKit.Base.update(Clipperz.Crypto.AES, {
 
 		key = new Clipperz.Crypto.AES.Key({key:aKey});
 
+//		encryptedData = someData.arrayValues();
+//		nonce = encryptedData.slice(0, (128/8));
+//		encryptedData = encryptedData.slice(128/8);
 		encryptedData = someData.arrayValues();
-		nonce = encryptedData.slice(0, (128/8));
-		encryptedData = encryptedData.slice(128/8);
+		nonce = someData.split(0, (128/8)).arrayValues();
+		encryptedData = someData.split(128/8).arrayValues();
+
 		decryptedData = Clipperz.Crypto.AES.encryptBlocks(key, encryptedData, nonce);
 
 		result = new Clipperz.ByteArray(decryptedData);

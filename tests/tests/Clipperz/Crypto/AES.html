@@ -1,6 +1,6 @@
 <!--
 
-Copyright 2008-2011 Clipperz Srl
+Copyright 2008-2012 Clipperz Srl
 
 This file is part of Clipperz's Javascript Crypto Library.
 
@@ -57,11 +57,19 @@ try {
 	
 	startTime = new Date();
 	
+console.log("==> 1");
 	keyValue = new Clipperz.ByteArray("0x00010203050607080a0b0c0d0f10111214151617191a1b1c1e1f202123242526");
+console.log("==> 2");
 	key = new Clipperz.Crypto.AES.Key({key:keyValue});
+console.log("==> 3");
 	block = new Clipperz.ByteArray("0x834eadfccac7e1b30664b1aba44815ab");
+console.log("==> 4");
+	var encryptedBlock = Clipperz.Crypto.AES.encryptBlock(key, block.arrayValues());
+console.log("encryptedBlock", encryptedBlock);	
 	encryptedBlock = new Clipperz.ByteArray(Clipperz.Crypto.AES.encryptBlock(key, block.arrayValues()));
+console.log("==> 5");
 	is(encryptedBlock.toHexString(), "0x1946dabf6a03a2a2c3d0b05080aed6fc", "Test 1");
+console.log("==> 6");
 	
 	keyValue = new Clipperz.ByteArray("0x28292a2b2d2e2f30323334353738393a3c3d3e3f41424344464748494b4c4d4e");
 	key = new Clipperz.Crypto.AES.Key({key:keyValue});

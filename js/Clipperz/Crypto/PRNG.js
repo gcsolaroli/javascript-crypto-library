@@ -1,6 +1,6 @@
 /*
 
-Copyright 2008-2011 Clipperz Srl
+Copyright 2008-2012 Clipperz Srl
 
 This file is part of Clipperz's Javascript Crypto Library.
 
@@ -424,7 +424,7 @@ Clipperz.Crypto.PRNG.Fortuna.prototype = MochiKit.Base.update(null, {
 		reseedCounterMask = 0xffffffff >>> (32 - c);
 		for (i=0; i<c; i++) {
 			if ((i == 0) || ((reseedCounter & (reseedCounterMask >>> (c - i))) == 0)) {
-				newKeySeed.appendBlock(this.accumulators()[i].stack());
+				newKeySeed.appendByteArray(this.accumulators()[i].stack());
 				this.accumulators()[i].resetStack();
 			} 
 		}
@@ -499,14 +499,14 @@ Clipperz.log("### PRNG.readyToGenerateRandomBytes");
 		
 			c = Math.ceil(aSize / (128 / 8));
 			for (i=0; i<c; i++) {
-				result.appendBlock(this.getRandomBlock());
+				result.appendByteArray(this.getRandomBlock());
 			}
 
 			if (result.length() != aSize) {
 				result = result.split(0, aSize);
 			}
 			
-			newKey = this.getRandomBlock().appendBlock(this.getRandomBlock());
+			newKey = this.getRandomBlock().appendByteArray(this.getRandomBlock());
 			this.setKey(newKey);
 		} else {
 MochiKit.Logging.logWarning("Fortuna generator has not enough entropy, yet!");
